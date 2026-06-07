@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  # ─── Frontend ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: collabpm_frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.collabpm.service=frontend"
+      - "com.collabpm.version=1.0.0"
+
+  # ─── Dev server (override for local development) ──────────
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: collabpm_frontend_dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    environment:
+      - NODE_ENV=development
+    profiles:
+      - dev
+
+networks:
+  default:
+    name: collabpm_network
